@@ -1,6 +1,5 @@
 mkdir -p files_mod 
-for file in ./*.txt
+for f in *.txt
 do
-    a=${file##*/}
-    sed "s/ /,/g" $a | awk '{print NR","$0}' > ./files_mod/$a   
+    sed "s/ /,/g" $f | awk '{print NR","$0}' > ./files_mod/$f   
 done
