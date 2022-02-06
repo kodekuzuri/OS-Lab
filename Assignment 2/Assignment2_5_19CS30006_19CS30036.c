@@ -160,27 +160,145 @@ int split_line(char** args,char* line)
 	return num_args;
 }
 
-int external_command(char** args,int num_args)
+int external_command(char** arguments,int fdIN, int fdOUT, int n)
 {
+    // arguments : stores all the arguments entered 
+    // n : the number of arguments passed
+    // fdIN, fdOUT: file descriptors for input/output respectively 
+
+    // function body 
+	
+    pid_t wait_PID ; // process ID created to handle wait (& commands)
+    int s ; // status variable for wait handling  
+    pid_t processID = fork() ; // process ID to store status of forked process
+
+    // parent process
+    if(processID > 0){
+        // if & is present, do not wait for child process to complete and let it execute in the background
+        if(!strcmp(arguments[n-1], "&")) ; 
+        
+        // wait for other commands 
+        else {
+            wait_PID = waitpid(processID, &s, WUNTRACED) ;
+
+            // WIFSIGNALED: error signal
+            // WEXITSTATUS: exit status (normally/abnormally)
+
+            // keep waiting until process hasn't exited and is behaving normally 
+            while((WIFSIGNALED(s) == 0) && (WEXITSTATUS(s) == 0)){
+                wait_PID = waitpid(processID, &s, WUNTRACED) ;
+            }
+        }
+    }
+
+    //child process
+    else if(!processID){
+
+        // flag to check symbol commands (<,>,&), lenC to store the length of commands 
+        int flag = 0 , lenC = 0, k = 0, i = 0 ; 
+        
+        // stdout redirected to fdOUT
+        if(fdOUT != 1){
+            dup2(fdOUT, 1) ; 
+            close(fdOUT) ; 
+        }
+
+        // stdin redirected to fdIN
+        if(fdIN != 0){
+            dup2(fdIN, 0) ; 
+            close(fdIN) ; 
+        }
+
+        while(k < n){
+
+            char *ch  ; 
+            ch  = arguments[k] ;
+            if(flag==0)
+            { 
+            if(((!strcmp(ch, ">")) || (!strcmp(ch, "<")) || (!strcmp(ch, "&"))) && (flag == 0)){
+                // storing length of the first command
+                lenC = k ; 
+                // marking flag 
+                if(flag < 1)flag++ ; 
+            }
+            }
+            if(!strcmp(ch, "<")){
+                int fdread ; 
+                // file descriptor for reading file on RHS 
+                fdread = open(arguments[k + 1], O_RDONLY) ;
+                // redirecting stdin to fdread
+                dup2(fdread, 0) ;  
+            }
+
+            if(!strcmp(ch, ">")){
+                int fdwrite ; 
+                // file descriptor for writing in file on RHS 
+                fdwrite  = open(arguments[k + 1], O_CREAT | O_WRONLY | O_TRUNC , 0666) ; 
+                // redirecting stdout to fdwrite 
+                dup2(fdwrite, 1) ; 
+            }
+
+            // in case of &, we don't need to wait or do anything and just execute the next command
+
+            k++ ; 
+        }
+
+        // if no symbol command found, then whole string is a single command
+        if(flag == 0) lenC = n ; 
+
+        char** arg = (char**)malloc(sizeof(char*)*(lenC + 1)) ; 
+                while(i < lenC){
+            arg[i] = arguments[i] ; 
+            i++ ; 
+            if(i == lenC) arg[i] = NULL ; 
+        }
+        int checkexec = execvp(arg[0], arg) ; 
+
+        if(checkexec == -1)
+        {
+            fprintf(stderr,"ERROR:command execution failure\n");
+            exit(EXIT_FAILURE);
+        }
+
+    }
+
+    // processID < 0 => forking error 
+    else{ 
+        fprintf(stderr, "ERROR: fork failure\n") ; 
+        exit(EXIT_FAILURE) ; 
+    }
+
+
+    // function end 
+
 	return EXIT_SUCCESS;
 }
 
-int run_command(char** args,int num_args)
-{
-	if(!args[0])   // No command
-		return EXIT_SUCCESS;
+int run_command(char** arguments, int n){
+    // arguments : stores all the arguments entered 
+    // n : the number of arguments passed [used in the case of non-in-built commands are entered]
+    
+    // if arguments are presents, execute 
+    if(arguments[0] != NULL){
+        int i = 0 ; 
+        int num_builtins = num_builtin_functions() ; 
 
-	int num_builtins = num_builtin_functions();
-	for (int i = 0; i < num_builtins; ++i)
-	{
-		/* code */
-		if(strcmp(builtin_names[i],args[0])==0)
-          {
-             return (*builtin_functions[i])(args); 
-          }
-	}
-	return external_command(args,num_args);
+        while(i < num_builtins){
+            // in case of match 
+            if(strcmp(arguments[0], builtin_names[i]) == 0){
+                return (*builtin_functions[i])(arguments) ;
+            }
+            i++ ; 
+        }
+
+        // In case of arguments not matching in-built functions, call external_command
+        return external_command(arguments,0,1, n) ; 
+    }
+
+    // In Case of no arguments, exit 
+    return EXIT_SUCCESS ; 
 }
+
 void command_loop()
 {
 	int status;
@@ -198,12 +316,16 @@ void command_loop()
 			if(args!=NULL)
 			status = run_command(args,num_args);
 
+			free(line);
+			free(args);
+
 		} while (status==EXIT_SUCCESS);	
 }
 
 int main(int argc, char const *argv[])
 {
     printf("#################Welcome to my shell!!#################\n");
-	command_loop();
+    printf("#################Sussy Baka Lesss gooooo#################\n") ; 	
+    command_loop();
 	return 0;
 }
