@@ -76,6 +76,7 @@ int split_line(char** args,char* line)
 	int buffer_size = BUFFER;
 	int len = strlen(line);
 	int arg_len = 0;
+    int vis = 0 ; 
     *p = 0 ; 
 
 	for (int i = 0; i < BUFFER; ++i)
@@ -134,7 +135,7 @@ int split_line(char** args,char* line)
 		}
 
         else if(line[i] == '|'){
-            
+            vis  = 1 ; 
             int l = strlen(args[num_args]) ; 
 
             if(l <= 0){
@@ -185,6 +186,11 @@ int split_line(char** args,char* line)
             }
         }
 	}
+
+    if(vis){
+        *p = num_args + 1 ; 
+        args[p] = NULL ; 
+    }
 	return num_args;
 }
 
