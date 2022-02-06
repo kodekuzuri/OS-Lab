@@ -76,6 +76,7 @@ int split_line(char** args,char* line)
 	int buffer_size = BUFFER;
 	int len = strlen(line);
 	int arg_len = 0;
+    *p = 0 ; 
 
 	for (int i = 0; i < BUFFER; ++i)
 	{
@@ -131,6 +132,33 @@ int split_line(char** args,char* line)
 				num_args++;
 			}
 		}
+
+        else if(line[i] == '|'){
+            
+            int l = strlen(args[num_args]) ; 
+
+            if(l <= 0){
+                *p = 0 ;
+                fprintf(stderr, "ERROR: Syntax error\n") ; 
+                return 0 ; 
+            }
+
+            arg_len = 0 ;
+            num_args++ ; 
+
+            /*
+            if(num_args >= buffer_size){
+                buffer_size+=BUFFER;
+                args = (char**)realloc(args, sizeof(char*)*buffer_size);
+                if(!args)
+                {
+                    printf("Error: memory allocation error\n");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            */             
+        }
+
 		else
 		{
 			args[num_args][arg_len] = line[i];
@@ -167,7 +195,7 @@ int external_command(char** arguments,int fdIN, int fdOUT, int n)
     // fdIN, fdOUT: file descriptors for input/output respectively 
 
     // function body 
-
+	
     pid_t wait_PID ; // process ID created to handle wait (& commands)
     int s ; // status variable for wait handling  
     pid_t processID = fork() ; // process ID to store status of forked process
@@ -212,15 +240,16 @@ int external_command(char** arguments,int fdIN, int fdOUT, int n)
         while(k < n){
 
             char *ch  ; 
-            ch  = arguments[k] ; 
-            
-            if(((!strcmp(ch, ">")) || ((!strcmp(ch, ">"))) || (!strcmpch, "&")) && (flag == 0)){
+            ch  = arguments[k] ;
+            if(flag==0)
+            { 
+            if(((!strcmp(ch, ">")) || (!strcmp(ch, "<")) || (!strcmp(ch, "&"))) && (flag == 0)){
                 // storing length of the first command
                 lenC = k ; 
                 // marking flag 
                 if(flag < 1)flag++ ; 
             }
-
+            }
             if(!strcmp(ch, "<")){
                 int fdread ; 
                 // file descriptor for reading file on RHS 
@@ -246,13 +275,11 @@ int external_command(char** arguments,int fdIN, int fdOUT, int n)
         if(flag == 0) lenC = n ; 
 
         char** arg = (char**)malloc(sizeof(char*)*(lenC + 1)) ; 
-        
-        while(i < lenC){
+                while(i < lenC){
             arg[i] = arguments[i] ; 
             i++ ; 
-            if(i == lenC) arg[i] = '\0' ; 
+            if(i == lenC) arg[i] = NULL ; 
         }
-
         int checkexec = execvp(arg[0], arg) ; 
 
         if(checkexec == -1)
@@ -282,9 +309,9 @@ int run_command(char** arguments, int n){
     // if arguments are presents, execute 
     if(arguments[0] != NULL){
         int i = 0 ; 
-        int NoOfBuiltIn = num_builtin_functions() ; 
+        int num_builtins = num_builtin_functions() ; 
 
-        while(i < NoOfBuiltIn){
+        while(i < num_builtins){
             // in case of match 
             if(strcmp(arguments[0], builtin_names[i]) == 0){
                 return (*builtin_functions[i])(arguments) ;
@@ -293,7 +320,7 @@ int run_command(char** arguments, int n){
         }
 
         // In case of arguments not matching in-built functions, call external_command
-        return external_command(arguments, n) ; 
+        return external_command(arguments,0,1, n) ; 
     }
 
     // In Case of no arguments, exit 
@@ -316,6 +343,9 @@ void command_loop()
 			num_args = split_line(args,line);
 			if(args!=NULL)
 			status = run_command(args,num_args);
+
+			free(line);
+			free(args);
 
 		} while (status==EXIT_SUCCESS);	
 }
