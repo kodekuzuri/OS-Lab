@@ -323,7 +323,7 @@ void command_loop()
 int main(int argc, char const *argv[])
 {
     printf("#################Welcome to my shell!!#################\n");
-    printf("#################Aryan is Sus#################\n") ; 	
+    printf("#################Sussy Baka Lesss gooooo#################\n") ; 	
     command_loop();
 	return 0;
 }
