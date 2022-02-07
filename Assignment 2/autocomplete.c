@@ -45,13 +45,11 @@ char* autocomplete(char* filename){
 
     else if(n > 1){
         int index = 0 ; 
-        for(int i = 0  ; i < n ; i++){
-            printf("#%d : %s", i+1, match[i]) ; 
-            printf("Enter index of filename chosen: ") ; 
-            scanf("%d", &index) ; 
-
-            return match[index-1] ;  
-        }
+        for(int i = 0  ; i < n ; i++)printf("#%d : %s", i+1, match[i]) ; 
+            
+        printf("Enter index of filename chosen: ") ; 
+        scanf("%d", &index) ; 
+        return match[index-1] ; 
     }
 
     else ; 
