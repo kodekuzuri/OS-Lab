@@ -81,7 +81,9 @@ int main(){
 
         if(fname[0] == '\0') ; 
         else{
-             line[++j] = fname[k++] ; 
+            while(line[++j] != 9){
+                 line[j] = fname[k++] ;
+            }
         }
     }
 
