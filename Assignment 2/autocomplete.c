@@ -324,7 +324,7 @@ int read_line(char* line)
 			}
 
             //printf("\nfilename to be completed: %s\n", icmplfname) ; 
-			printf("\nline : %s\n", line) ; 
+			//printf("\nline : %s\n", line) ; 
 
             DIR *d;
             int n = 0 ; // count of matches 
