@@ -317,6 +317,10 @@ int read_line(char* line)
 
             strrev(icmplfname) ; 
 
+	    if((icmplfname[0] == '.') && (icmplfname[1] == '/')){
+	          for(int i = 0 ; i < (k - 2) ; i++) icmplfname[i] = icmplfname[i+2] ; 
+	    }
+
             //printf("\nfilename to be completed: %s\n", icmplfname) ; 
 
             DIR *d;
@@ -657,7 +661,7 @@ void command_loop()
 			if(args!=NULL)
 			{
 				add_to_history(line);
-			status = run_command(args,num_args);
+				status = run_command(args,num_args);
 			}
 			free(line);
 			free(args);
