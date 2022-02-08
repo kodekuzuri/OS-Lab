@@ -82,9 +82,10 @@ int main(){
         if(fname[0] == '\0') ; 
         else{
             while(line[++j] != 9){
-                 line[j] = fname[k++] ;
-                 
+                 line[j] = fname[k++] ;   
             }
+            
+            printf("%s\n", line) ; 
         }
     }
 
