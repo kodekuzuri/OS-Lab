@@ -36,7 +36,7 @@ char* autocomplete(char* filename){
     }
 
     if(!n){
-        return 
+        return "\0" ; 
     }
 
     if(n == 1){
