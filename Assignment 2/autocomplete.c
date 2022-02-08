@@ -84,7 +84,7 @@ int main(){
             while(line[++j] != 9){
                  line[j] = fname[k++] ;   
             }
-            
+            line[++j] = '\0' ; 
             printf("%s\n", line) ; 
         }
     }
