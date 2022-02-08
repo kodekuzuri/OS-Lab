@@ -500,13 +500,17 @@ void command_loop()
 			line = (char *)malloc(sizeof(char)*BUFFER);
 			status = read_line(line);
 			int l = strlen(line);
-			if(l==0)
-				continue;
 			args = (char**)malloc(sizeof(char*)*BUFFER);
 			num_args = split_line(args,line);
-			if(args[0]==NULL)
+			if(args==NULL)
+			{
+				free(line);
+			free(args);
+			fflush(stdin);
+       	    fflush(stdout);
 				continue;
-			if(args!=NULL)
+			}
+			if(args!=NULL && num_args>0)
 			{
 				add_to_history(line);
 			status = run_command(args,num_args);
