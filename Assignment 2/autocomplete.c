@@ -65,7 +65,7 @@ int main(){
     // TO BE ADDED TO READLINE FUNCTION 
 
     if(c == 9){ // 9 is ASCII value of tab 
-
+        printf("\b") ; 
         int j = i - 1 , k = 0 ; 
         char *icmplfname  = malloc(sizeof(char) * 300) ; 
         char *fname  = malloc(sizeof(char) * 300) ;
@@ -83,6 +83,7 @@ int main(){
         else{
             while(line[++j] != 9){
                  line[j] = fname[k++] ;
+                 
             }
         }
     }
