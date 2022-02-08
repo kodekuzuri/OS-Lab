@@ -187,7 +187,7 @@ void search_history()
 			if(curr_length>max)
 			{
 				max = curr_length;
-				ans   = i;
+				ans = i;
 				curr_command = history[i];
 			}
 		}
@@ -317,11 +317,14 @@ int read_line(char* line)
 
             strrev(icmplfname) ; 
 
-	    if((icmplfname[0] == '.') && (icmplfname[1] == '/')){
-	          for(int i = 0 ; i < (k - 2) ; i++) icmplfname[i] = icmplfname[i+2] ; 
-	    }
+			if((icmplfname[0] == '.') && (icmplfname[1] == '/')){
+				for(int i = 0 ; i < (k - 2) ; i++) icmplfname[i] = icmplfname[i+2] ; 
+				icmplfname[k-2] = '\0' ; 
+				k = k - 2 ;
+			}
 
             //printf("\nfilename to be completed: %s\n", icmplfname) ; 
+			printf("\nline : %s\n", line) ; 
 
             DIR *d;
             int n = 0 ; // count of matches 
@@ -342,7 +345,6 @@ int read_line(char* line)
                         strcpy(match[n++], check) ;
                         //printf("matched : %s\n", check) ;  
                     } 
-                    
                 }
                 closedir(d);
             }
@@ -370,7 +372,9 @@ int read_line(char* line)
                 printf("Enter index of filename selected: ") ; 
                 scanf("%d", &index) ; 
 
-                for(int f = 0 ; f < i ; f++) printf("%c",line[f]) ; 
+				int f = 0  ;
+
+                for(; f < i ; f++) printf("%c",line[f]) ; 
                 do{
                     line[i++] = match[index-1][k] ; 
                     printf("%c",line[i-1]) ;
