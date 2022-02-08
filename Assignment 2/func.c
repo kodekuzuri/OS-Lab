@@ -75,8 +75,7 @@ char** pipeSplit(char** arr, int *p)
         }
     }
 
-
+    args[k + 1] = NULL ; 
     *p = k + 1 ; 
-    args[p] = NULL ;  
     return args ; 
 }
