@@ -9,6 +9,8 @@
 #include <dirent.h>
 #include <stdbool.h>
 
+int SZE = 0 ;
+
 void MultiWatch(char* line){
 
     int i = 0 ; 
@@ -108,5 +110,44 @@ void MultiWatch(char* line){
 
     }
 
-	int flag = 1;    
+    int ctr = 0 ; 
+
+    while(ctr < num_pipe_processes){
+        // printfunc()
+        ctr++ ; 
+    }
+
+	int flag = 1;
+    struct temp_files_multiwatch temp;
+
+    for(;;){
+        char filestr[1000] ; 
+
+        int fread = read(inotify_fd, filestr, 1000) ; 
+
+        if(!(fread + 1)){
+            flag = 0 ;
+            // killing process 
+            kill(current_proc, SIGKILL) ;
+
+            for(int k = 0 ; k < num_pipe_processes ; k++){
+                remove(process_files[k].filename); 
+            }
+            break  ;
+        }
+
+        for(int j = 0 ; j < fread ;){
+            struct inotify_event *e = (struct inotify_event *)&filestr[j] ;
+            
+            for(int k = 0 ; k < num_pipe_processes ; k++){
+                if(strcmp(process_files[k].filename, (e->name)) == 0){
+                    //printfunc(process_files[k].filename, process_files[k].file_desc) ; 
+                }
+            }
+
+            j += e->len ; 
+            j += SZE ; 
+        }
+
+    }    
 }
