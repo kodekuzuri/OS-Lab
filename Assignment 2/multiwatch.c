@@ -9,29 +9,29 @@
 #include <dirent.h>
 #include <stdbool.h>
 
-void MultiWatch(char* a){
+void MultiWatch(char* line){
 
     int i = 0 ; 
     int j = 0 ; 
-    char adel[2000] ; 
-    char ** args = (char*)malloc(sizeof(char) * BUF) ; 
+    char adel[1000] ; 
+    char** pipe_commands=(char**)malloc(sizeof(char*)*BUFFER);
     char leftb = '[' , nl = '\0', rightb = ']', dq = '\"', comma  = ',', pipe = '|'; 
-
-    for(;a[i] != leftb;){
+    int num_pipe_processes = 0;
+    for(;line[i] != leftb;){
         i++ ; 
     }   
 
-    for(;a[i] != nl; i++){
+    for(;line[i] != nl; i++){
 
-        if((a[i] == rightb)||(a[i] == dq)) ; 
+        if((line[i] == rightb)||(line[i] == dq)) ; 
 
-        else if( a[i] == comma ){
+        else if( line[i] == comma ){
             adel[j] = pipe ; 
             j++ ; 
         }
 
         else {
-            adel[j] = a[i] ; 
+            adel[j] = line[i] ; 
             j++ ; 
         }
     }
@@ -39,17 +39,74 @@ void MultiWatch(char* a){
     // marking end of string 
     adel[j] = '\0' ;
 
-    args = read_line(adel) ; 
-    inotify_fd = inotify_init() ;
+    num_pipe_processes = pipeSplit(adel,pipe_commands); 
+    int inotify_fd = inotify_init() ;
 
-    if(inotify_fd < 0){
-        printf("ERROR\n") ; 
-        exit(0) ; 
+    // if(inotify_fd < 0){
+    //     printf("ERROR: Error in inotify_init\n") ; 
+    //     exit(0) ; 
+    // }
+
+    int add_watch_out = inotify_add_watch(inotify_fd, ".", IN_MODIFY | IN_CREATE | IN_ACCESS);
+    // if ( add_watch_out < 0)
+    // {
+    //     printf("ERROR: Error in inotify add watch \n");
+    //     exit(0);
+    // }
+
+    int current_proc = 0;
+    char** arguments;
+    arguments = (char**)malloc(sizeof(char*)*BUFFER);
+
+    struct temp_files_multiwatch process_files[num_pipe_processes];
+    for (int i = 0; i < num_pipe_processes; ++i)
+    {
+    	/* code */
+    	int num_args = split_line(arguments,pipe_commands[i]);
+    	int processID = fork();
+
+    	if(processID==0)
+    	{
+    		char filename[300];
+    		char pid_string[200];
+    		CONVERT_TO_STRING("%d",getpid(),pid_string);
+    		 strcat(filename,".tmp.");
+    		 strcat(filename,pid_string);
+    		 strcat(filename,".txt");
+            int wr = open(filename, O_WRONLY | O_CREAT | O_APPEND | O_TRUNC, 0666);
+
+            dup2(wr, STDOUT_FILENO);
+            close(wr);
+
+            setpgid(0, current_proc);
+            
+            
+            int check_execvp = execvp(arguments[0], arguments);
+             if(checkexec == -1)
+      	  	{
+            fprintf(stderr,"ERROR:command execution failure\n");
+            exit(EXIT_FAILURE);
+        	}
+    	}
+    	if(current_proc==0)
+    	{
+    		current_proc = processID;
+    	}
+
+    	char filename[300];
+    	char pid_string[200];
+    	CONVERT_TO_STRING("%d",processID,pid_string);
+    	strcat(filename,".tmp.");
+    	strcat(filename,pid_string);
+    	strcat(filename,".txt");
+        int rfd = open(filename, O_RDONLY | O_CREAT, 0666);
+
+
+        process_files[i].filename = filename;
+        process_files[i].file_desc = rfd;
+        process_files[i].command = pipe_commands[i];
+
     }
 
-    if()
-
-
-
-    
+	int flag = 1;    
 }
