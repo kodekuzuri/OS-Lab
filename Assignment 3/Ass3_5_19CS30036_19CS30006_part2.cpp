@@ -13,31 +13,74 @@ using namespace std ;
 typedef struct matrixmul{
     pid_t pid ; 
     //status 
-    int i, j, k ;   
+    int ctr ;
+    int i, j ;   
     int M[N][N] ; 
     int mid ; 
     int pno ;   
 }matrixmul ;
 
+
+// n : no. of elements in queue
+// Mno : no. of matrices to be multiplied
+// job_created : no. of jobs created till now
+//  
 typedef SM{
-    int job_done ; 
+    int job_done ;
+    int job_created ; 
+    int calculated ;  
     matrixmul Q[QN] ; 
     int Mno ; 
-    int n ; 
-    int maxn ;
-    int 
+    int n ;
+    int h ; 
 }SM ; 
+
+matrixmul mcreate(int i, pid_t p){
+    matrixmul m ; 
+    m.pid = p ; 
+    m.pno = i + 1 ; 
+    m.ctr = 8 ; 
+    m.i = -1 ; m.j = -1 ; 
+
+    for(int i = 0 ; i < N ; i++)
+        for(int j = 0 ; j < N ; j++) m.M[i][j] = (rand()%19) - 9 ; 
+
+    m.mid = rand()%100000 + 1 ; 
+
+    return m ;  
+}
 
 void createWorker(int s, pid_t pid, int NP, int NW, int i){
     int seed = time(0) + i + 2 + NP ;
+    int flag = 0 ; 
     srand(seed) ; 
 
     SM* sm = (SM*)shmat(s, NULL, 0) ; 
 
-    matrixmul m1, m2 ; 
-    if()
+    while(1){
+        int sleepdur = rand()%4 ; 
+        sleep(sleepdur) ;   
+        
+        matrixmul m1, m2 ; 
+        if(sm->n > 1){
+            m1 = pop(sm) ; 
+            m2 = pop(sm) ; 
+            flag = 1 ; 
+        }    
+
+        if(!flag) break ; 
+
+        else{
+            flag = 0 ; 
+
+        }
+    }
     return ;
 } 
+
+void insert(SM *sm, matrixmul m){
+
+}
 
 
 void createProducer(int s, pid_t pid, int i){
@@ -53,20 +96,23 @@ void createProducer(int s, pid_t pid, int i){
         int sleepdur = rand()%4 ; 
         sleep(sleepdur) ;  
 
-        if(sm->job_created != sm->Mno){
-            break ; 
-        }
 
         if(sm->n < QN){
-            cout << "Job data : \n" ;
-            cout << "Matrix ID: " << sm->mid << "\n" ; 
-            cout << "producer No.: " << pno << "\n" ; 
-            cout << "Producer ID: " << pid  << "\n" ; 
-            cout << " i : " << i << " j : " << j << " k : " << k << "\n" ; 
+            insert(sm, m) ; 
 
-            sm->job_created++ ; 
+            (sm->n)++ ; 
+            (sm->job_created)++ ; 
+
+            //printing job details 
+            cout << "Job data : \n" ;
+            cout << "Matrix ID: " << m->mid << "\n" ; 
+            cout << "producer No.: " << m->pno << "\n" ; 
+            cout << "Producer ID: " << m->pid  << "\n" ; 
+            //cout << " i : " << m->i << " j : " << m->j << " k : " << m->k << "\n" ; 
+            cout << "ctr : " << ctr << "\n" ;       
         }
     }
+
     return ;
 } 
 
@@ -147,7 +193,7 @@ int main(){
 
         // child process; producer creation
         if(!tpid){
-            createWorker(Smi, getpid(), NP, NW, k) ;
+            createWorker(Smem, getpid(), NP, NW, k) ;
             k++ ;
             return 0 ; 
         }
