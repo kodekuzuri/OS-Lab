@@ -11,50 +11,66 @@ using namespace std ;
 // mid : matrix id 
 
 typedef struct matrixmul{
-    int pno ;
-    bool mstatus ; 
+    pid_t pid ; 
+    //status 
+    int i, j, k ;   
     int M[N][N] ; 
-    int mid ;   
+    int mid ; 
+    int pno ;   
 }matrixmul ;
 
 typedef SM{
-    int job_created ; 
+    int job_done ; 
     matrixmul Q[QN] ; 
     int Mno ; 
+    int n ; 
+    int maxn ;
+    int 
 }SM ; 
 
 void createWorker(int s, pid_t pid, int NP, int NW, int i){
     int seed = time(0) + i + 2 + NP ;
     srand(seed) ; 
 
-    // matrix multiplication block 
-    matrixmul m  = mcreate(i, pid) ;
+    SM* sm = (SM*)shmat(s, NULL, 0) ; 
 
-    int sleepdur = rand()%4 ; 
-    sleep(sleepdur) ;  
-
-
-
-
-
+    matrixmul m1, m2 ; 
+    if()
     return ;
 } 
+
+
 void createProducer(int s, pid_t pid, int i){
     int seed = time(0) + i + 2 ;
     srand(seed) ; 
 
     SM* sm = (SM*)shmat(s, NULL, 0) ; 
 
-    while((sm->job_created != sm->Mno)){
+    while((sm->job_created < sm->Mno)){
+        // matrix multiplication block 
+        matrixmul m  = mcreate(i, pid) ;
 
+        int sleepdur = rand()%4 ; 
+        sleep(sleepdur) ;  
+
+        if(sm->job_created != sm->Mno){
+            break ; 
+        }
+
+        if(sm->n < QN){
+            cout << "Job data : \n" ;
+            cout << "Matrix ID: " << sm->mid << "\n" ; 
+            cout << "producer No.: " << pno << "\n" ; 
+            cout << "Producer ID: " << pid  << "\n" ; 
+            cout << " i : " << i << " j : " << j << " k : " << k << "\n" ; 
+
+            sm->job_created++ ; 
+        }
     }
-
     return ;
 } 
 
 int main(){
-    
-    int 
 
     int NP ; 
     cout << "Enter NP(No. of producers) : " ;
@@ -88,6 +104,8 @@ int main(){
     SM* Smem = (SM*)shmat(smi, NULL, 0); ; 
     Smem->job_created = 0 ; 
     Smem->Mno = Mno ; 
+    Smem->n = 0 ; 
+    Smem->job_created = 0 ;
 
     // process IDs for processes , workers 
     pid_t producers[NP], workers[NW] ;  
@@ -121,14 +139,15 @@ int main(){
     }
 
     k = 0 ;
-    while(k < NP){
+
+    while(k < NW){
 
         // temporary PID for operations
         pid_t tpid = fork() ; 
 
-        // child process; workerr creation
+        // child process; producer creation
         if(!tpid){
-            createWorker(Smem, getpid(), NP, NW, k) ;
+            createWorker(Smi, getpid(), NP, NW, k) ;
             k++ ;
             return 0 ; 
         }
@@ -136,7 +155,7 @@ int main(){
         // parent process
         else if(tpid > 0){
             // storing process id in array
-            workers[k++] = tpid ; 
+            workers[k++] = tpid ;
         }
 
         // pid < 0 : fork error 
@@ -150,3 +169,4 @@ int main(){
 
     return 0 ; 
 }
+
