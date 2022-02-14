@@ -110,10 +110,8 @@ int main() {
             scanf("%lf",&B[i][j]);   
 
     
-    printf("Matrix C = A*B is given below: \n");
     
-    pid_t wait_PID;
-    int status;
+   
     for (int i = 0; i < r1; ++i)
       {
           /* code */
@@ -130,36 +128,30 @@ int main() {
                 current->B = B;
                 current->C = C;
                 mult(current);
-            }
-            else
-            {
-                 wait_PID = waitpid(pid, &status, WUNTRACED) ;
-
-            // WIFSIGNALED: error signal
-            // WEXITSTATUS: exit status (normally/abnormally)
-
-            // keep waiting until process hasn't exited and is behaving normally 
-            while((WIFSIGNALED(s) == 0) && (WIFEXITED(s) == 0)){
-                wait_PID = waitpid(pid, &status, WUNTRACED) ;
-            }
-
+                shmdt(shared_memory);
+                exit(0);
             }
            
         }
       }
 
- //   printf("Matrix C = A*B is given below: \n");
+   for (int i = 0; i < r1*c2; ++i)
+   {
+       /* code */
+        wait(NULL);
+   }
+   printf("Matrix C = A*B is given below: \n");
 
-    // for (int i = 0; i < r1; ++i)
-    // {
-    //     /* code */
-    //     for (int j = 0; j < c2; ++j)
-    //     {
-    //         /* code */
-    //         printf("%lf  ",C[i][j] );
-    //     }
-    //     printf("\n");
-    // }
+    for (int i = 0; i < r1; ++i)
+    {
+        /* code */
+        for (int j = 0; j < c2; ++j)
+        {
+            /* code */
+            printf("%lf  ",C[i][j] );
+        }
+        printf("\n");
+    }
    shmdt(shared_memory); shmctl(shared_mem_id, IPC_RMID, 0);
 
     return 0;
