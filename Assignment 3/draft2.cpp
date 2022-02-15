@@ -173,9 +173,31 @@ void createWorker(SM* sm, int NP, int NW, int i){
         if(m1.status==0)
         {
             matrixmul resultant_matrix = mcreate(-1); 
-            sm->Q.insert(resultant_matrix);
-            int block[M][M];
+            int blockA[M][M],blockB[M][M],blockD[M][M];
+         
 
+            for (int i = 0; i < M; ++i)
+            {
+                /* code */
+                for(int j=0;j<M;j++)
+                {
+                    blockA[i][j] = m1.M[i][j];
+                    blockB[i][j] = m2.M[i][j];
+                    blockD[i][j] = 0;
+                    for (k=0; k<M; ++k) blockD[i][j] += blockA[i][k] * blockB[k][j];
+
+                }
+            }
+
+            for (int i = 0; i < M; ++i)
+            {
+                /* code */
+                for(int j = 0;j<M;j++)
+                {
+                    resultant_matrix.M[i][j] = blockD[i][j];
+                }
+            }
+            sm->Q.insert(resultant_matrix);
 
         }
         else if(m1.status==7)
@@ -184,7 +206,15 @@ void createWorker(SM* sm, int NP, int NW, int i){
         }
         else
         {
+            int k = m1.status%2;
+            if(k==0)
+            {
 
+            }
+            else if(k==1)
+            {
+
+            }
         }
         
     }
