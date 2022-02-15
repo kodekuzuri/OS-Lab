@@ -42,7 +42,7 @@ typedef struct matrixmul{
 // Mno : no. of matrices to be multiplied
 // job_created : no. of jobs created till now
 //  
-typedef SM{
+typedef struct SM{
     int job_done ;
     int job_created ; 
     int calculated ;  
@@ -147,7 +147,7 @@ int main(){
     
     // Shared Memory ID creation and checking allocation 
     int smi ;  
-    if( ( smi = shmget(val, sizeof(shared_memory), 0666 | IPC_CREAT) ) < 0 ){
+    if( ( smi = shmget(val, sizeof(SM), 0666 | IPC_CREAT) ) < 0 ){
         perror("ERROR : ") ; 
         return -1 ; 
     }
