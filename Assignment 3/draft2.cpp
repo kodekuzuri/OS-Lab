@@ -6,8 +6,10 @@
 
  my idea : for every matrix inserted, keep 2 indices i,j maintained in its structure
            we need 8 workers for multiplication. Insert one empty matrix C at the end of
-           the queue when i1 = j1 = i2 = j2 = -1 , and then check the first two matrices in the queue. If the worker finds that 
-           i1 = j1 = i2 = j2 = N then stop, pop the first 2 matrices and proceed
+           the queue when i1 = j1 = i2 = j2 = -1  OR when ctr1 = ctr2 = 4, and then check the first two matrices in the queue. If the worker finds that 
+           i1 = j1 = i2 = j2 = N OR when ctr1 = ctr2 = 0 [don't know which one would be better] then stop, pop the first 2 matrices and proceed
+           
+           [for every worker , decrement ctr1 and ctr2 by 1]
 
            else find D(i1)(j1)(j2) and add this result to the relevant quarter in the empty matrix 
            had inserted at the start 
@@ -77,7 +79,7 @@ void createWorker(int s, pid_t pid, int NP, int NW, int i){
         sleep(sleepdur) ;   
         
         matrixmul m1, m2 ; 
-        if(sm->n > 1){
+        if(sm->Q.size() > 1){
             flag = 1 ; 
         }    
 
@@ -105,10 +107,10 @@ void createProducer(int s, pid_t pid, int i){
         sleep(sleepdur) ;  
 
 
-        if(sm->n < QN){
-            insert(sm, m) ; 
+        if(sm->Q.size() < QN){
+            sm->Q.insert(m) ; 
 
-            (sm->n)++ ; 
+            //(sm->n)++ ; 
             (sm->job_created)++ ; 
 
             //printing job details 
