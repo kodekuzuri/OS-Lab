@@ -19,8 +19,8 @@
 
 using namespace std ; 
 
-#define N 10
-#define M 5
+#define N 100
+#define M 50
 #define QN 8
 
 typedef struct matrixmul{
@@ -99,7 +99,7 @@ struct FiniteQueue {
 // job_created : no. of jobs created till now
 //  
 typedef struct SM{
-    //int job_done ;
+   // int job_done ;
     int job_created ; 
     FiniteQueue* Q ; 
     int Mno ; 
@@ -132,16 +132,13 @@ matrixmul mcreate(int i){
 }
 
 void createWorker(SM* sm, int NP, int NW, int i){
-    cout<<"BBBB"<<endl;
     int seed = time(0) + i + 2 + NP ;
     srand(seed) ; 
 
 
     //while(sm->job_done < sm-> Mno){
-        cout<<"AAAAA"<<endl;
-        int sleepdur = rand()%4 ; 
+        double sleepdur = (rand()%400)/100 ; 
         sleep(sleepdur) ;   
-        cout<<" Queue size: "<<sm->Q->size<<endl;
         if(sm->Q->size < 2)
         {
             return;
@@ -149,16 +146,29 @@ void createWorker(SM* sm, int NP, int NW, int i){
         matrixmul *m1 = &(sm->Q->queue[0]);
         matrixmul *m2 = &(sm->Q->queue[1]); 
 
-        cout<<"STATUS M1"<<m1->status<<endl;
         // exit(0);
+        cout<<"STATUS: "<<m1->status<<" "<<m2->status<<endl;
+
+        // if(sm->job_done==4)
+        // {
+        //     while(1)
+        //     {
+        //         if(sm->job_done!=4)
+        //         {
+        //             break;
+        //         }
+        //     }
+        // }
         if(m1->status==0)
         {
              cout<<"Status of worker: Reading matrices for the first time"<<endl;
-             cout<<"Worker number: "<<i<<endl;
+             cout<<"Worker number: "<<i+1<<endl;
              cout<<"Matrix id 1: "<<m1->mid<<endl;
              cout<<"Matrix id 2: "<<m2->mid<<endl;
+            cout<<"Queue size: "<<sm->Q->size<<endl;
 
-            //sm->job_done = 0 ; 
+
+          //  sm->job_done = 0 ; 
 
             matrixmul resultant_matrix = mcreate(-1); 
             int blockA[M][M],blockB[M][M],blockD[M][M];
@@ -218,11 +228,14 @@ void createWorker(SM* sm, int NP, int NW, int i){
                     }
                   }
                   
-            if(K==0){
-                cout<<"Status of worker: Copying blocks"<<endl;
-            cout<<"Worker number: "<<i<<endl;
-            cout<<"Matrix id 1: "<<m1->mid<<endl;
-            cout<<"Matrix id 2: "<<m2->mid<<endl;
+            if(K==1){
+                  //  (sm->job_done)++ ; 
+                  cout<<"Status of worker: Copying blocks"<<endl;
+                  cout<<"Worker number: "<<i+1<<endl;
+                  cout<<"Matrix id 1: "<<m1->mid<<endl;
+                  cout<<"Matrix id 2: "<<m2->mid<<endl;
+                  cout<<"Queue size: "<<sm->Q->size<<endl;
+
                 for (int i = M*I; i < M*(I+1); ++i)
                     {
                         /* code */
@@ -233,12 +246,15 @@ void createWorker(SM* sm, int NP, int NW, int i){
                     }
             }
 
-            else if(K==1)
+            else if(K==0)
             {
+
                 cout<<"Status of worker: Adding blocks"<<endl;
-            cout<<"Worker number: "<<i<<endl;
-            cout<<"Matrix id 1: "<<m1->mid<<endl;
-            cout<<"Matrix id 2: "<<m2->mid<<endl;
+                cout<<"Worker number: "<<i+1<<endl;
+                cout<<"Matrix id 1: "<<m1->mid<<endl;
+                cout<<"Matrix id 2: "<<m2->mid<<endl;
+                cout<<"Queue size: "<<sm->Q->size<<endl;
+
               for (int i = M*I; i < M*(I+1); ++i)
                     {
                         /* code */
@@ -250,15 +266,19 @@ void createWorker(SM* sm, int NP, int NW, int i){
             }
 
             if((m1->status == m2->status) && (m1->status == 7)){
-                //sm->job_done = 1 ; 
+                
                 sm->Q->remove() ; 
                 sm->Q->remove() ; 
 
+                cout<<"Queue size after removal: "<<sm->Q->size<<endl;
 
             }
+            else
+            {
 
                 m1->status++ ; 
                 m2->status++ ; 
+            }
 
         }
         
@@ -291,23 +311,23 @@ void createProducer(SM* sm,  int i){
                 cout << "Generated Job data : \n" ;
                 cout << "Matrix ID: " << m.mid << "\n" ; 
                 cout << "producer No.: " << m.pno << "\n" ; 
-                cout<<"Matrix : "<<m.matrix[0][0]<<endl;
-                //cout << " i : " << m->i << " j : " << m->j << " k : " << m->k << "\n" ; 
+                cout<<"Queue size: "<<sm->Q->size<<endl;
             sm->Q->insert(m);
             (sm->job_created)++ ; 
         }
-        else if(sm->Q->size==QN) 
+        else if(sm->Q->size==QN-1) 
         {
             
             while(1)
             {
                 if(sm->Q->size<QN)
                 {
-                    cout<<"HERE"<<endl;
                     //printing job details 
+                
                 cout << "Generated Job data : \n" ;
                 cout << "Matrix ID: " << m.mid << "\n" ; 
                 cout << "producer No.: " << m.pno << "\n" ; 
+                cout<<"Queue size: "<<sm->Q->size<<endl;
                 //cout << " i : " << m->i << " j : " << m->j << " k : " << m->k << "\n" ; 
 
                      sm->Q->insert(m);
@@ -340,8 +360,6 @@ int main(){
     // storing start time to calculate total time taken 
     time_t s = time(0) ;
 
-    // ftok : key generation 
-    key_t val = ftok("/dev/random",'c');
     
     // Shared Memory ID creation and checking allocation 
     size_t shared_memory_size = sizeof(SM)+sizeof(FiniteQueue);
@@ -364,7 +382,7 @@ int main(){
     Smem->Mno = num_matrices ; 
     Smem->Q->front = 0;
     Smem->Q->size = 0;
-   // Smem->job_done = 0;
+  // Smem->job_done = 0;
 
     // process IDs for processes , workers 
     pid_t producers[NP], workers[NW] ;  
@@ -380,7 +398,7 @@ int main(){
 
         // child process; producer creation
         if(!tpid){
-             sleep((rand()%100)/100.0);
+             
             if(Smem->job_created < Smem->Mno)
             {
              createProducer(Smem,k) ;
@@ -407,24 +425,20 @@ int main(){
 
     int w = 0 ;
     while(w < NW){
-        cout<<"WORKERS"<<endl;
         // temporary PID for operations
         pid_t tpid = fork() ; 
 
         // child process; producer creation
         if(!tpid){
-            cout<<Smem->Q->size<<endl;
             while(1)
             {
                 if((Smem->Q->size)<2)
                 {
 
-                    sleep(1);
+                    //sleep(1);
                     continue;
                 }
-                cout<<"HELLOOO"<<endl;
             createWorker(Smem, NP, NW, w) ;
-            cout<<"BYEEEEE"<<endl;
             }
             shmdt(Smem);
             exit(0);
@@ -448,7 +462,7 @@ int main(){
     for(;;){
         // condition termination
         if((Smem->job_created >= num_matrices) && (Smem->Q->size == 1)){
-            int total_time = time(0) - s ;
+            double total_time = time(0) - s ;
             cout << "Time taken = " << total_time << " s\n" ; 
 
             int f = 0 ; 
