@@ -2,13 +2,10 @@
  * BHULNA MAT 
  SM->n was supposed to represent current size of Queue.
  Easily replaceable by SM->Q.size()
-
-
  my idea : for every matrix inserted, keep 2 indices i,j maintained in its structure
            we need 8 workers for multiplication. Insert one empty matrix C at the end of
            the queue when i1 = j1 = i2 = j2 = -1 , and then check the first two matrices in the queue. If the worker finds that 
            i1 = j1 = i2 = j2 = N then stop, pop the first 2 matrices and proceed
-
            else find D(i1)(j1)(j2) and add this result to the relevant quarter in the empty matrix 
            had inserted at the start 
  * **********************/
@@ -28,8 +25,9 @@ using namespace std ;
 
 typedef struct matrixmul{
     int status;
-    int i,j,k;  // Useful in calculation of status of matrix multiplication
+    //int i,j,k;  // Useful in calculation of status of matrix multiplication
     int M[N][N] ; 
+    int resultant_index ; 
     int mid ; 
     int pno ;   
 }matrixmul ;
@@ -56,6 +54,7 @@ struct FiniteQueue {
             queue[size] = data;
             size++;
         }
+
         return;
     }
  
@@ -98,7 +97,7 @@ struct FiniteQueue {
     matrixmul first_matrix()
     {
          if (front == size) {
-            printf("\nQueue is  empty\n");
+            printf("\nQueue is empty\n");
             return;
         }
 
@@ -122,7 +121,7 @@ struct FiniteQueue {
 // job_created : no. of jobs created till now
 //  
 typedef struct SM{
-    int job_done ;
+    //int job_done ;
     int job_created ; 
     FiniteQueue Q ; 
     int Mno ; 
@@ -133,10 +132,11 @@ matrixmul mcreate(int i){
     matrixmul m ; 
     m.pno = i + 1 ; 
     m.status = 0 ; 
+    /*
     m.i = 0 ;
     m.j = 0 ;
     m.k = 0; 
-
+    */
     if(i==-1)
     {
      for(int i = 0 ; i < N ; i++)
@@ -158,7 +158,8 @@ void createWorker(SM* sm, int NP, int NW, int i){
     srand(seed) ; 
 
 
-    while(sm->job_done < sm-> Mno){
+    //while(sm->job_done < sm-> Mno){
+
         int sleepdur = rand()%4 ; 
         sleep(sleepdur) ;   
         
@@ -172,6 +173,8 @@ void createWorker(SM* sm, int NP, int NW, int i){
 
         if(m1.status==0)
         {
+            //sm->job_done = 0 ; 
+
             matrixmul resultant_matrix = mcreate(-1); 
             int blockA[M][M],blockB[M][M],blockD[M][M];
          
@@ -184,6 +187,7 @@ void createWorker(SM* sm, int NP, int NW, int i){
                     blockA[i][j] = m1.M[i][j];
                     blockB[i][j] = m2.M[i][j];
                     blockD[i][j] = 0;
+
                     for (int k=0; k<M; ++k) blockD[i][j] += blockA[i][k] * blockB[k][j];
 
                 }
@@ -192,22 +196,25 @@ void createWorker(SM* sm, int NP, int NW, int i){
             for (int i = 0; i < M; ++i)
             {
                 /* code */
-                for(int j = 0;j<M;j++)
+                for(int j = 0; j<M; j++)
                 {
                     resultant_matrix.M[i][j] = blockD[i][j];
                 }
             }
+
+            m1.resultant_index = sm->Q.size ;
+            m2.resultant_index = sm->Q.size ;
+            
             sm->Q.insert(resultant_matrix);
+            
             m1.status++;
             m2.status++;
 
         }
-        else if(m1.status==7)
-        {
 
-        }
         else
         {
+
             int I = (m1.status & 4) ? 1 : 0;
             int J = (m1.status & 2) ? 1 : 0;
             int K = (m1.status & 1) ? 1 : 0;
@@ -226,18 +233,43 @@ void createWorker(SM* sm, int NP, int NW, int i){
                     }
                   }
                   
-            if(k==0)
-            {
-               
-                
+            if(K==0){
+                for (int i = M*I; i < M*(I+1); ++i)
+                    {
+                        /* code */
+                        for(int j = M*J; j < M*(J+1) ; j++)
+                        {
+                            sm->Q.queue[m1.resultant_index].M[i][j] = blockD[i][j] ;
+                        } 
+                    }
             }
-            else if(k==1)
+
+            else if(K==1)
             {
+              for (int i = M*I; i < M*(I+1); ++i)
+                    {
+                        /* code */
+                        for(int j = M*J; j< M*(J+1) ; j++)
+                        {
+                            sm->Q.queue[m1.resultant_index].M[i][j] += blockD[i][j] ;
+                        }
+                    }
+            }
+
+            if((m1.status == m2.status) && (m1.status == 7)){
+                //sm->job_done = 1 ; 
+                sm->Q.remove() ; 
+                sm->Q.remove() ; 
+
 
             }
+
+                m1.status++ ; 
+                m2.status++ ; 
+
         }
         
-    }
+//    }
     return ;
 } 
 
