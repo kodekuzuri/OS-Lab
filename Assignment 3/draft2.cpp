@@ -26,7 +26,7 @@ using namespace std ;
 typedef struct matrixmul{
     int status;
     //int i,j,k;  // Useful in calculation of status of matrix multiplication
-    int M[N][N] ; 
+    int matrix[N][N] ; 
     int resultant_index ; 
     int mid ; 
     int pno ;   
@@ -35,16 +35,16 @@ typedef struct matrixmul{
 
 
 struct FiniteQueue {
-    int front = 0;
-    int  capacity = QN;
-    matrixmul queue[capacity];
-    int size = 0;
- 
+    int front;
+    matrixmul queue[QN];
+    int size ;
+
+   
    
     void insert(matrixmul data)
     {
         // check queue is full or not
-        if (capacity == size) {
+        if (QN == size) {
             printf("\nQueue is full\n");
             return;
         }
@@ -67,7 +67,7 @@ struct FiniteQueue {
             return;
         }
  
-        /
+        
         else {
             for (int i = 0; i < size - 1; i++) {
                 queue[i] = queue[i + 1];
@@ -78,39 +78,17 @@ struct FiniteQueue {
         return;
     }
  
-    // print queue elements
-    void queueDisplay()
-    {
-        int i;
-        if (front == size) {
-            printf("\nQueue is Empty\n");
-            return;
-        }
- 
-        // traverse front to rear and print elements
-        for (i = front; i < size; i++) {
-            printf(" %d <-- ", queue[i]);
-        }
-        return;
-    }
- 
+  
     matrixmul first_matrix()
     {
-         if (front == size) {
-            printf("\nQueue is empty\n");
-            return;
-        }
+       
 
         return queue[front];
  
     }
     matrixmul second_matrix()
     {
-        if((front+1)==size)
-        {
-            printf("\n Queue is of size 1 \n");
-            return;
-        }
+       
         return queue[front + 1];
     }
 
@@ -140,13 +118,13 @@ matrixmul mcreate(int i){
     if(i==-1)
     {
      for(int i = 0 ; i < N ; i++)
-        for(int j = 0 ; j < N ; j++) m.M[i][j] = 0 ; 
+        for(int j = 0 ; j < N ; j++) m.matrix[i][j] = 0 ; 
    
     }
     else
     {
     for(int i = 0 ; i < N ; i++)
-        for(int j = 0 ; j < N ; j++) m.M[i][j] = (rand()%19) - 9 ; 
+        for(int j = 0 ; j < N ; j++) m.matrix[i][j] = (rand()%19) - 9 ; 
     }
     m.mid = rand()%100000 + 1 ; 
 
@@ -165,7 +143,7 @@ void createWorker(SM* sm, int NP, int NW, int i){
         
         if(sm->Q.size < 2)
         {
-            continue;
+            return;
         }
 
         matrixmul m1 = sm->Q.first_matrix();
@@ -184,8 +162,8 @@ void createWorker(SM* sm, int NP, int NW, int i){
                 /* code */
                 for(int j=0;j<M;j++)
                 {
-                    blockA[i][j] = m1.M[i][j];
-                    blockB[i][j] = m2.M[i][j];
+                    blockA[i][j] = m1.matrix[i][j];
+                    blockB[i][j] = m2.matrix[i][j];
                     blockD[i][j] = 0;
 
                     for (int k=0; k<M; ++k) blockD[i][j] += blockA[i][k] * blockB[k][j];
@@ -198,7 +176,7 @@ void createWorker(SM* sm, int NP, int NW, int i){
                 /* code */
                 for(int j = 0; j<M; j++)
                 {
-                    resultant_matrix.M[i][j] = blockD[i][j];
+                    resultant_matrix.matrix[i][j] = blockD[i][j];
                 }
             }
 
@@ -225,8 +203,8 @@ void createWorker(SM* sm, int NP, int NW, int i){
                 /* code */
                 for(int j=M*J;j<M*(J+1);j++)
                     {
-                    blockA[i][j] = m1.M[i][j];
-                    blockB[i][j] = m2.M[i][j];
+                    blockA[i][j] = m1.matrix[i][j];
+                    blockB[i][j] = m2.matrix[i][j];
                     blockD[i][j] = 0;
                     for (int k=M*K; k<M*(K+1); ++k) blockD[i][j] += blockA[i][k] * blockB[k][j];
 
@@ -239,7 +217,7 @@ void createWorker(SM* sm, int NP, int NW, int i){
                         /* code */
                         for(int j = M*J; j < M*(J+1) ; j++)
                         {
-                            sm->Q.queue[m1.resultant_index].M[i][j] = blockD[i][j] ;
+                            sm->Q.queue[m1.resultant_index].matrix[i][j] = blockD[i][j] ;
                         } 
                     }
             }
@@ -251,7 +229,7 @@ void createWorker(SM* sm, int NP, int NW, int i){
                         /* code */
                         for(int j = M*J; j< M*(J+1) ; j++)
                         {
-                            sm->Q.queue[m1.resultant_index].M[i][j] += blockD[i][j] ;
+                            sm->Q.queue[m1.resultant_index].matrix[i][j] += blockD[i][j] ;
                         }
                     }
             }
@@ -279,25 +257,25 @@ void createProducer(SM* sm,  int i){
     srand(seed) ; 
 
   
-    while((sm->job_created < sm->Mno)){
+    //while((sm->job_created < sm->Mno)){
+        //printf("Job created: %d\n",sm->job_created );
         // matrix multiplication block 
         matrixmul m  = mcreate(i) ;
 
         int sleepdur = rand()%4 ; 
         sleep(sleepdur) ;  
 
-
         if(sm->Q.size < QN){
             sm->Q.insert(m);
-
+            printf("HELLOOO\n");
             (sm->job_created)++ ; 
-        1}
+        }
         else if(sm->Q.size==QN) 
         {
             //printing job details 
             cout << "Generated Job data : \n" ;
-            cout << "Matrix ID: " << m->mid << "\n" ; 
-            cout << "producer No.: " << m->pno << "\n" ; 
+            cout << "Matrix ID: " << m.mid << "\n" ; 
+            cout << "producer No.: " << m.pno << "\n" ; 
             //cout << " i : " << m->i << " j : " << m->j << " k : " << m->k << "\n" ; 
 
             while(1)
@@ -305,7 +283,6 @@ void createProducer(SM* sm,  int i){
                 if(sm->Q.size<QN)
                 {
                      sm->Q.insert(m);
-                    sm->status = 0;
                     (sm->job_created)++ ;
                     break; 
                 }
@@ -313,7 +290,7 @@ void createProducer(SM* sm,  int i){
         }
                 
         
-    }
+    //}
 
     return ;
 } 
@@ -326,6 +303,7 @@ int main(){
 
     int NW ; 
     cout << "Enter NW(No. of workers) : " ; 
+    cin>>NW;
 
     int num_matrices ; 
     cout << "Enter number of matrices to be multiplied : " ; 
@@ -353,7 +331,9 @@ int main(){
     SM* Smem = (SM*)shmat(smi, NULL, 0); ; 
     Smem->job_created = 0 ; 
     Smem->Mno = num_matrices ; 
-    Smem->job_done = 0;
+    Smem->Q.front = 0;
+    Smem->Q.size = 0;
+   // Smem->job_done = 0;
 
     // process IDs for processes , workers 
     pid_t producers[NP], workers[NW] ;  
@@ -367,14 +347,18 @@ int main(){
 
         // child process; producer creation
         if(!tpid){
+            while(Smem->job_created < num_matrices)
+            {
             createProducer(Smem,k) ;
             k++ ;
             shmdt(Smem);
             exit(0);
+            }
         }
 
         // parent process
         else if(tpid > 0){
+            //printf("Heelooo\n");
             // storing process id in array
             producers[k++] = tpid ;
         }
@@ -419,7 +403,7 @@ int main(){
     // killing using process ids stored during worker and producer creation 
     for(;;){
         // condition termination
-        if((Smem->job_created == num_matrices) && (Smem->Q.size() == 1)){
+        if((Smem->job_created == num_matrices) && (Smem->Q.size == 1)){
             int total_time = s - time(0) ;
             cout << "Time taken = " << total_time << " s\n" ; 
 
@@ -438,7 +422,7 @@ int main(){
     shmdt(Smem) ;
     
     // destruction marking 
-    shmctl(Smem, IPC_RMID, 0) ;
+    shmctl(smi, IPC_RMID, 0) ;
 
     return 0 ; 
 }
