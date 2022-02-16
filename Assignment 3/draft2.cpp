@@ -184,7 +184,7 @@ void createWorker(SM* sm, int NP, int NW, int i){
                     blockA[i][j] = m1.M[i][j];
                     blockB[i][j] = m2.M[i][j];
                     blockD[i][j] = 0;
-                    for (k=0; k<M; ++k) blockD[i][j] += blockA[i][k] * blockB[k][j];
+                    for (int k=0; k<M; ++k) blockD[i][j] += blockA[i][k] * blockB[k][j];
 
                 }
             }
@@ -198,6 +198,8 @@ void createWorker(SM* sm, int NP, int NW, int i){
                 }
             }
             sm->Q.insert(resultant_matrix);
+            m1.status++;
+            m2.status++;
 
         }
         else if(m1.status==7)
@@ -206,10 +208,28 @@ void createWorker(SM* sm, int NP, int NW, int i){
         }
         else
         {
-            int k = m1.status%2;
+            int I = (m1.status & 4) ? 1 : 0;
+            int J = (m1.status & 2) ? 1 : 0;
+            int K = (m1.status & 1) ? 1 : 0;
+            int blockA[M][M],blockB[M][M],blockD[M][M];
+
+             for (int i = M*I; i < M*(I+1); ++i)
+                  {
+                /* code */
+                for(int j=M*J;j<M*(J+1);j++)
+                    {
+                    blockA[i][j] = m1.M[i][j];
+                    blockB[i][j] = m2.M[i][j];
+                    blockD[i][j] = 0;
+                    for (int k=M*K; k<M*(K+1); ++k) blockD[i][j] += blockA[i][k] * blockB[k][j];
+
+                    }
+                  }
+                  
             if(k==0)
             {
-
+               
+                
             }
             else if(k==1)
             {
