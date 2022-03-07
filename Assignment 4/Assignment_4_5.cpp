@@ -1,3 +1,8 @@
+// NAME: ARYAN MEHTA PRANAV RAJPUT
+// ROLL NUMBER: 19CS30006 19CS30036
+// GROUP 5
+
+#include <iostream>
 #include <pthread.h>
 #include <iostream>
 #include <sys/ipc.h>
@@ -8,6 +13,7 @@
 #include <unistd.h>
 #include <chrono>
 
+// FLAGS USED FOR STATUS OF JOB
 #define READY 0
 #define RUNNING_P 1
 #define RUNNING_C 2
@@ -26,11 +32,10 @@ struct Node
 	int dependent_jobs[MAX_JOBS]; // dependent jobs of that node (children)
 	int parent_node;
 	int child_index; 
-	int ready_children_count;
+	int ready_children_count; // children count of node which are not run yet
 	int array_index;
 	pthread_mutex_t node_lock ;    // mutex lock for node
 	int status;
-	// Other data
 	void create_node(int,int,int,int);
     void remove_child() ;
 	void add_child(int);
@@ -41,14 +46,15 @@ struct shared_memory
 {
 	Node base_tree[MAX_JOBS];
 	int jobs_created;
-    pthread_mutex_t print_lock, job_lock; 
-	int add_job(int, int);
+    pthread_mutex_t print_lock, job_lock;  // print lock used for output mutex and job lock when job created has a change 
+	int add_job(int, int); // Add new job (node to tree)
 } *A;
+// A is the master process
 
 
 void Node::create_node(int job_id,int run_time,int parent,int array_index)
 {
-    // NODE MUTEX LOCK ATTRIBUTE INITIALISATION
+    // NODE MUTEX LOCK  INITIALISATION
     pthread_mutexattr_t attribute ;
     pthread_mutexattr_init(&attribute);
     pthread_mutexattr_setpshared(&attribute, PTHREAD_PROCESS_SHARED);
@@ -91,7 +97,7 @@ int shared_memory::add_job(int parent_node, int print_flag)
 	(this->jobs_created)++;
 
 
-    //PRINT
+    //print flag is a variable used so that only new jobs added are printed not the inital ones.
         if(print_flag){
             pthread_mutex_lock(&(this->print_lock)) ; 
 
@@ -368,8 +374,7 @@ int main(int argc, char const *argv[])
 
             } 
 
-        // do nothing 
-        else ; 
+       
     }
 
     // parent waiting for child termination
