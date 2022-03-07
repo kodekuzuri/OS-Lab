@@ -28,18 +28,20 @@ struct Node
 	int child_index; 
 	int ready_children_count;
 	int array_index;
-	//pthread_mutex_t lock;    // mutex lock
+	pthread_mutex_t node_lock ;    // mutex lock
 	int status;
 	// Other data
 	void create_node(int,int,int,int);
     void remove_child() ;
 	void add_child(int);
+
 };
 
 struct shared_memory
 {
 	Node base_tree[MAX_JOBS];
 	int jobs_created;
+    pthread_mutex_t print_lock, job_lock; 
 	int add_job(int, int);
 } *A;
 
@@ -49,6 +51,13 @@ void Node::remove_child(){
 
 void Node::create_node(int job_id,int run_time,int parent,int array_index)
 {
+    // NODE MUTEX LOCK ATTRIBUTE INITIALISATION
+    pthread_mutexattr_t attribute ;
+    pthread_mutexattr_init(&attribute);
+    pthread_mutexattr_setpshared(&attribute, PTHREAD_PROCESS_SHARED);
+    pthread_mutexattr_settype(&attribute, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&(this->node_lock), &attribute);
+
 	this->job_id = job_id;
     this->completion_time = run_time;
     this->parent_node = parent;
@@ -60,7 +69,9 @@ void Node::create_node(int job_id,int run_time,int parent,int array_index)
 
 int shared_memory::add_job(int parent_node, int print_flag)
 {
-    int flag ;
+ //   int flag ;
+
+    pthread_mutex_lock(&(this->job_lock)) ; 
 
 	int index = this->jobs_created;
 	(this->base_tree)[index].create_node(rand()%MAX_JOBS+1,rand()%MAX_COMPLETION_TIME+1,parent_node,index);
@@ -69,6 +80,8 @@ int shared_memory::add_job(int parent_node, int print_flag)
 
     //PRINT
         if(print_flag){
+            pthread_mutex_lock(&(this->print_lock)) ; 
+
             cout << endl ;
             cout << "ADDED NEW JOB SUCCESSFULLY\n" ; 
 
@@ -77,8 +90,12 @@ int shared_memory::add_job(int parent_node, int print_flag)
             cout << "INDEX OF PARENT =  " << parent_node << endl ; 
 
             cout << endl ; 
+
+            pthread_mutex_unlock(&(this->print_lock)) ; 
         }
     //PRINT END
+
+    pthread_mutex_unlock(&(this->job_lock)) ; 
     
 	return index;
 }
@@ -105,21 +122,37 @@ void *producer_job(void *argp)
 
 	while(chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start_time).count() < producer_thread_time)
 	{
+        int flag = 0 ;
+
+        pthread_mutex_lock(&(A->job_lock)) ; 
+
 		int node_id = rand()%A->jobs_created;
-		int flag = 0;
+
+        pthread_mutex_unlock(&(A->job_lock)) ; 
+
+		
 		// Node is free (ready to use)
+
+       // node lock 
+
 		if((A->base_tree)[node_id].status==0)
 		{
 			(A->base_tree)[node_id].status = 1;
 			flag = 1;
 		}
 
+        // node unlock
+
+        pthread_mutex_unlock(&(A->job_lock)) ; 
+
 		if(flag==1)
 		{
 
 			(A->base_tree)[node_id].add_child(1);
 
+            // node lock
 			(A->base_tree)[node_id].status = READY;
+            // node unlock
 
 			int sleepdur = 200 + rand()%301 ; 
         	usleep(sleepdur*1000) ;   
@@ -136,18 +169,32 @@ void tree_traversal(int u)
 
     flag = 0 ; 
 
-    if(!(A->base_tree)[u].status){
+    // node lock
 
+    if (((A->base_tree)[u].status == DONE) || ((A->base_tree)[u].status == RUNNING_C)) {
+        // node unlock
+        return ; 
+    }
+
+
+    if(!(A->base_tree)[u].status){
+        // node lock 2
 
         if((A->base_tree)[u].ready_children_count == READY){
             if(!flag) flag = 1 ; 
             (A->base_tree)[u].status = RUNNING_C ; 
         }
 
+        // node unlock 2
+
         else ; 
     }
 
+    // node unlock
+
     if(flag == 1){
+
+        pthread_mutex_lock(&(A->print_lock)) ; 
 
         //PRINT
             cout << endl ;
@@ -160,10 +207,14 @@ void tree_traversal(int u)
             cout << endl ; 
         //PRINT END
 
+        pthread_mutex_unlock(&(A->print_lock)) ; 
+
 		int sleepdur = (A->base_tree)[u].completion_time ; 
         sleepdur *= 1000 ;
         
-        usleep( sleepdur ) ;   
+        usleep( sleepdur ) ;  
+
+        pthread_mutex_lock(&(A->print_lock)) ;  
 
         //PRINT
             cout << endl ;
@@ -176,7 +227,12 @@ void tree_traversal(int u)
             cout << endl ; 
         //PRINT END 
 
+        pthread_mutex_unlock(&(A->print_lock)) ; 
+
+        // node lock 
         (A->base_tree)[u].status = DONE ; 
+        // node unlock
+
         (A->base_tree)[(A->base_tree)[u].parent_node].remove_child() ; 
     }
 
@@ -200,7 +256,9 @@ void *consumer_job(void *argc)
         // call to tree traversal from root node
         tree_traversal(root) ; 
 
+        // node lock
         val = (A->base_tree)[root].status ; 
+        // node unlock
     }
 
     pthread_exit(0) ; 
@@ -227,8 +285,17 @@ int main(int argc, char const *argv[])
 
 	A = (shared_memory *)shared_mem;
 	A->jobs_created = 0;
-    // this->jobs_update.init();
-    // this->output_log.init();
+
+    // SETTING THREAD ATTRIBUTES
+    pthread_mutexattr_t attribute ;
+    pthread_mutexattr_init(&attribute);
+    pthread_mutexattr_setpshared(&attribute, PTHREAD_PROCESS_SHARED);
+    pthread_mutexattr_settype(&attribute, PTHREAD_MUTEX_RECURSIVE);
+
+    pthread_mutex_init(&(A->print_lock), &attribute);
+    pthread_mutex_init(&(A->job_lock), &attribute);  
+   
+
 
 	A->add_job(-1, 0); // Add 1st node
 
