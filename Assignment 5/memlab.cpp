@@ -4,7 +4,7 @@ map<int,int> var_table;
 block *mem ; 
 
 
-int size_of_datatype(int var_type)
+int size_of_datatype(int var_type) // returns in bits
 {
 	int datatype_sizes[4] = {32,8,24,1};
 
@@ -27,10 +27,30 @@ void createMem(int memory)
 	mem->data = NULL ; 
 	mem->padding = 0 ; 
 
-	cout << p << "\n" ; 
-	cout << mem << "\n" ; 
-	cout << mem->size << "\n" ; 
 	return ;
+}
+
+int get_memory(int memory_size)
+{
+	block* start = mem;
+	while((start!=NULL) && ((start->free_flag==0) || (start->size<memory_size)))
+		start = start + 
+	
+	if(memory_size<(4*8))
+	{
+		//
+	}
+	else
+	{
+		block* curr_block = NULL;
+		curr_block->size = memory_size/8;
+		curr_block->free_flag = 0;
+		curr_block->data = NULL;
+		curr_block->padding = 
+
+	}	
+
+	
 }
 
 Datatype createVar(int var_type)
@@ -40,7 +60,7 @@ Datatype createVar(int var_type)
 	int local_index = var_table.size() ; 
 
 	// word Id 
-	int wordId = mem->getMemory(size);
+	int wordId = mem->get_memory(size);
 	var_table.push_back(wordId);
 
 	
@@ -48,6 +68,7 @@ Datatype createVar(int var_type)
 
 	return Datatype(local_index,var_type);
 }
+
 
 
 int main(){
