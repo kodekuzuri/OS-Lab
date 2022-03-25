@@ -14,17 +14,40 @@
 #include<bits/stdc++.h>
 using namespace std;
 
+#define NUM_VAR_TYPES 4
+// Variable types: 
+// 0 - int
+// 1 - char 
+// 2 - med int
+// 3 - bool
+
 struct block
 {
 	int size;
 	int padding;
 	int free_flag;
 	void *data;
+	block *next;
 
 };
-void* createMem(int memory); // memory is number of bytes here
 
-void createVar(int var_size,int type_of_var);
+struct Datatype
+{
+	int local_index;
+	int var_type;
+
+	Datatype(int l,int v)
+	{
+		local_index = l;
+		var_type = v;
+	}
+};
+
+int size_of_datatype(int var_type);
+
+void* createMem(int memory); // memory is number of bits here
+
+void createVar(int var_type);
 
 void assignVar(int value);
 
