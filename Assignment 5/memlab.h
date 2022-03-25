@@ -30,10 +30,7 @@ struct block
 	void *data;
 	block *next;
 
-	int getMemory(int n){
-		
-	}
-
+	
 
 };
 
@@ -50,6 +47,7 @@ struct Datatype
 	}
 };
 
+int get_memory(int mem_size);
 int size_of_datatype(int var_type);
 
 void createMem(int memory); // memory is number of bytes here
