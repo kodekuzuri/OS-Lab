@@ -14,6 +14,7 @@
 #include<bits/stdc++.h>
 using namespace std;
 
+
 #define NUM_VAR_TYPES 4
 // Variable types: 
 // 0 - int
@@ -29,14 +30,20 @@ struct block
 	void *data;
 	block *next;
 
+	int getMemory(int n){
+		
+	}
+
+
 };
+
 
 struct Datatype
 {
 	int local_index;
 	int var_type;
 
-	Datatype(int l,int v)
+	Datatype(int l, int v)
 	{
 		local_index = l;
 		var_type = v;
@@ -45,13 +52,13 @@ struct Datatype
 
 int size_of_datatype(int var_type);
 
-void* createMem(int memory); // memory is number of bits here
+void createMem(int memory); // memory is number of bytes here
 
-void createVar(int var_type);
+Datatype createVar(int var_type);
 
 void assignVar(int value);
 
-void createArr(int arr_size,int datatype)
+void createArr(int arr_size,int datatype);
 
 // assign array
 
