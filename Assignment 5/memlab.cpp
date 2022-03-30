@@ -13,7 +13,8 @@
 // 	Check if everything properly stored in word format or byte format everywhere
 // 	medium int
 // 	create array and assign array
-
+// define max_stack_size and max_var_size as total_mem/12 in the end
+// Dont use compaction for every free element. define some other threshold.
 #include "memlab.h"
 
 Main_Memory* memory = NULL;
@@ -22,7 +23,7 @@ Stack* gc_stack = NULL;
 
 bool Stack::push(int x)
 {
-    if (top >= (MAX - 1))
+    if (top >= (MAX_STACK_SIZE - 1))
     {
         return false;
     }
@@ -139,36 +140,35 @@ void LocalTable::free(unsigned int idx) {
 
 void start_scope()
 {
-	gc_stack.push(-1);
+	gc_stack->push(-1);
 	return;
 }
 
 void end_scope()
 {
-	while(gc_stack.first_elem()!=-1)
+	while(gc_stack->first_elem()!=-1)
 	{
-		local_table->setUnmarked(gc_stack.first_elem());
-		int val = gc_stack.pop();
+		local_table->setUnmarked(gc_stack->first_elem());
+		int val = gc_stack->pop();
 		if(val==-1)
 		{
-			gc_stack.pop();
+			gc_stack->pop();
 			break;
 		}
 	}
 }
 
 void gc_run() {
-	int compact = 0;
     for (int i = 0; i < MAX_VARS; i++) {
-        PTHREAD_MUTEX_LOCK(&mem->mutex);
-        PTHREAD_MUTEX_LOCK(&symTable->mutex);
-        if (symTable->isAllocated(i) && !symTable->isMarked(i)) 
+        pthread_mutex_lock(&memory->memory_mutex);
+        pthread_mutex_lock(&local_table->localtable_mutex);
+        if (local_table->isAllocated(i) && !local_table->isMarked(i)) 
         {
             freeElem(i);
             compactMem();
         }
-        PTHREAD_MUTEX_UNLOCK(&symTable->mutex);
-        PTHREAD_MUTEX_UNLOCK(&mem->mutex);
+        pthread_mutex_unlock(&local_table->localtable_mutex);
+        pthread_mutex_unlock(&memory->memory_mutex);
     }
 }
 
@@ -197,24 +197,24 @@ void* garbageCollector(void*)
 }
 
 void calcOffset() {
-    int* p = mem->start;
+    int* p = memory->start_mem;
     int offset = 0;
-    while (p < mem->end) {
+    while (p < memory->end_mem) {
         if ((*p & 1) == 0) {
             offset += (*p >> 1);
         } else {
-            *(p + (*p >> 1) - 1) = (((p - offset) - mem->start) << 1) | 1;
+            *(p + (*p >> 1) - 1) = (((p - offset) - memory->start_mem) << 1) | 1;
         }
         p = p + (*p >> 1);
     }
 }
 
 void updateSymbolTable() {
-    for (int i = 0; i < MAX_local_array; i++) {
-        if (symTable->isAllocated(i)) {
-            int* p = symTable->getPtr(i) - 1;
+    for (int i = 0; i < MAX_VARS; i++) {
+        if (local_table->isAllocated(i)) {
+            int* p = local_table->getPtr(i) - 1;
             int newWordId = *(p + (*p >> 1) - 1) >> 1;
-            symTable->local_array[i].local_index = (newWordId << 1) | 1;
+            local_table->local_array[i].local_index = (newWordId << 1) | 1;
         }
     }
 }
@@ -222,9 +222,9 @@ void updateSymbolTable() {
 void compactMem() {
     calcOffset();
     updateSymbolTable();
-    int* p = mem->start;
+    int* p = memory->start_mem;
     int* next = p + (*p >> 1);
-    while (next != mem->end) {
+    while (next != memory->end_mem) {
         if ((*p & 1) == 0 && (*next & 1) == 1) {
             int word1 = *p >> 1;
             int word2 = *next >> 1;
@@ -233,7 +233,7 @@ void compactMem() {
             *p = word1 << 1;
             *(p + word1 - 1) = word1 << 1;
             next = p + word1;
-            if (next != mem->end && (*next & 1) == 0) {
+            if (next != memory->end_mem && (*next & 1) == 0) {
                 word1 = word1 + (*next >> 1);
                 *p = word1 << 1;
                 *(p + word1 - 1) = word1 << 1;
@@ -244,8 +244,8 @@ void compactMem() {
             next = p + (*p >> 1);
         }
     }
-    p = mem->start;
-    while (p < mem->end) {
+    p = memory->start_mem;
+    while (p < memory->end_mem) {
         *(p + (*p >> 1) - 1) = *p;
         p = p + (*p >> 1);
     }
@@ -266,7 +266,7 @@ void createMem(int mem_size)
 	 pthread_t gc_thread;
 	 pthread_attr_t attr;
      pthread_attr_init(&attr);
-     pthread_create(gc_thread, &attr, garbageCollector, NULL);
+     pthread_create(&gc_thread, &attr, garbageCollector, NULL);
 	return ;
 }
 
@@ -306,7 +306,7 @@ Datatype createVar(int var_type)
 	int local_index = local_table->alloc(wordId,0);
 	local_table->setAllocated(local_index);
 	local_table->setMarked(local_index);
-	stack->push(local_index);
+	gc_stack->push(local_index);
 	return Datatype(local_index,var_type,false);
  }
 
@@ -368,7 +368,7 @@ Datatype createArr(int arr_len,int var_type)
 	int local_index = local_table->alloc(wordId,0);
 	local_table->setAllocated(local_index);
 	local_table->setMarked(local_index);
-	stack->push(local_index);
+	gc_stack->push(local_index);
 
 	return Datatype(local_index,var_type,true);
 }
@@ -398,10 +398,10 @@ void assignArr(Datatype d,int arr_indx,char c) // Assign value at some index for
 	memcpy(((char *)pt+arr_indx),&c,1);
 }
 
-void assignArr(Datatype d,int arr_indx,med_int m) // Assign value at some index for medium int array 
-{
+// void assignArr(Datatype d,int arr_indx,med_int m) // Assign value at some index for medium int array 
+// {
 
-}
+// }
 
 void assignArr(Datatype d,int arr_indx,bool b) // Assign value at some index for bool array 
 {
@@ -450,13 +450,13 @@ void freeElem(int loc_id)
 	}
 
 	// Need to check again
-	if (p != memory->start_mem && (*(p - 1) & 1) == 0)  // Check for prev block
-	{  
-        int prev_size = (*(p - 1) >> 1);
-        *(p - prev_size) = (prev_size + words) << 1;  // new size in words
-        *(p + words - 1) = (prev_size + words) << 1;  // footer
-        words = words + prev_size;
-    }
+	// if (p != memory->start_mem && (*(p - 1) & 1) == 0)  // Check for prev block
+	// {  
+ //        int prev_size = (*(p - 1) >> 1);
+ //        *(p - prev_size) = (prev_size + words) << 1;  // new size in words
+ //        *(p + words - 1) = (prev_size + words) << 1;  // footer
+ //        words = words + prev_size;
+ //    }
 }
 
 int main(){
