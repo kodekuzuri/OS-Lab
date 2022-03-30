@@ -11,7 +11,15 @@
 #ifndef __MEMLAB_H
 #define __MEMLAB_H
 
-#include<bits/stdc++.h>
+#include<iostream>
+#include <cstring>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/time.h>  
+#include <stdlib.h>  
+#include <fcntl.h>  
+#include <signal.h>  
+#include <sys/types.h> 
 using namespace std;
 
 
@@ -32,8 +40,8 @@ struct Main_Memory
 {
 	int* start_mem;
 	int* end_mem;
-	// add locks
-
+	// add lock
+	pthread_mutex_t memory_mutex;
 	Main_Memory(void* p,int mem_size)
 	{
 		start_mem = (int *)p;
@@ -68,7 +76,7 @@ struct LocalTable {
     unsigned int head, tail;
     Variable local_array[MAX_VARS];
     int size;
-    pthread_mutex_t mutex;
+    pthread_mutex_t localtable_mutex;
     int alloc(unsigned int wordidx, unsigned int offset);
     void free(unsigned int idx);
     int getWordIdx(unsigned int idx);
@@ -85,15 +93,29 @@ struct Datatype
 {
 	int local_index;
 	int var_type;
+	bool isArray;
 
-	Datatype(int l, int v)
+	Datatype(int l, int v,bool iA)
 	{
 		local_index = l;
 		var_type = v;
+		isArray = iA;
 	}
 };
 
-int get_memory(int mem_size);
+void start_scope();
+
+void end_scope();
+
+void gc_run();
+void handlSigUSR1(int sig);
+void gc_initialize();
+
+void calcOffset();
+void updateSymbolTable();
+
+void compactMem();
+
 int size_of_datatype(int var_type);
 
 void createMem(int mem_size); // mem_size is number of bytes here
@@ -101,13 +123,20 @@ void createMem(int mem_size); // mem_size is number of bytes here
 Datatype createVar(int var_type);
 
 void assignVar(Datatype d,int value);
+// void assignVar(Datatype d,medium_int m);
 void assignVar(Datatype d,char c);
 void assignVar(Datatype d,bool b);
 
-void createArr(int arr_size,int datatype);
+Datatype createArr(int arr_len,int var_type);
 
-// assign array
+void assignArr(Datatype d,int arr_indx,int value); // Assign value at some index for integer array 
+void assignArr(Datatype d,int arr_indx,char c); // Assign value at some index for char array 
+void assignArr(Datatype d,int arr_indx,med_int m); // Assign value at some index for medium int array 
+void assignArr(Datatype d,int arr_indx,bool b); // Assign value at some index for bool array 
+void assignArr(Datatype d,int arr[],int arr_size ); // Assign value to entire integer array
+void assignArr(Datatype d,char arr[] ); // Assign value to entire char array
+void assignArr(Datatype d,medium_int arr[] ); // Assign value to entire medium int array
+void assignArr(Datatype d,bool arr[] );  // Assign value to entire bool array
 
-// freeElem
-void freeElem(int* p);
+void freeElem(int loc_id);
 #endif // __MEMLAB_H
