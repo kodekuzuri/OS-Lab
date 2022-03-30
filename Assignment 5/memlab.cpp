@@ -8,6 +8,12 @@
 // Date: 22.03.2022
 // Group: 5
 
+
+// // TODO:
+// 	Check if everything properly stored in word format or byte format everywhere
+// 	medium int
+// 	create array and assign array
+
 #include "memlab.h"
 
 Main_Memory* memory = NULL;
@@ -141,7 +147,7 @@ void end_scope()
 {
 	while(gc_stack.first_elem()!=-1)
 	{
-		local_table->setMarked(gc_stack.first_elem());
+		local_table->setUnmarked(gc_stack.first_elem());
 		int val = gc_stack.pop();
 		if(val==-1)
 		{
@@ -158,7 +164,7 @@ void gc_run() {
         PTHREAD_MUTEX_LOCK(&symTable->mutex);
         if (symTable->isAllocated(i) && !symTable->isMarked(i)) 
         {
-            _freeElem(i);
+            freeElem(i);
             compactMem();
         }
         PTHREAD_MUTEX_UNLOCK(&symTable->mutex);
@@ -299,9 +305,9 @@ Datatype createVar(int var_type)
 	cout<<wordId<<endl;
 	int local_index = local_table->alloc(wordId,0);
 	local_table->setAllocated(local_index);
-	
-
-	return Datatype(local_index,var_type);
+	local_table->setMarked(local_index);
+	stack->push(local_index);
+	return Datatype(local_index,var_type,false);
  }
 
 void assignVar(Datatype d,int value)
@@ -315,6 +321,8 @@ void assignVar(Datatype d,int value)
 	int* pt = local_table->getPtr(local_index);
  	memcpy(pt,&value,4);
 }
+
+// void assignVar(Datatype d,medium_int m)
 
 void assignVar(Datatype d,char c)
 {
@@ -342,14 +350,113 @@ void assignVar(Datatype d,bool b)
  	memcpy(pt,&value,4);	
 }
 
-void freeElem(int* p)
+Datatype createArr(int arr_len,int var_type)
 {
+	int total_size;
+	if(var_type==3)
+		total_size = (arr_len*size_of_datatype(var_type))/8;
+	else 
+		total_size = arr_len*(size_of_datatype(var_type)/4);
+
+	if(total_size%4!=0)
+	{
+		total_size = (total_size/4)*4 + 4;
+	}
+
+	int wordId = memory->get_memory(total_size);// Find free block
+	cout<<wordId<<endl;
+	int local_index = local_table->alloc(wordId,0);
+	local_table->setAllocated(local_index);
+	local_table->setMarked(local_index);
+	stack->push(local_index);
+
+	return Datatype(local_index,var_type,true);
+}
+
+void assignArr(Datatype d,int arr_indx,int value) // Assign value at some index for integer array 
+{
+	if(d.var_type!=0)
+	{
+		cout<<"Please give int type value"<<endl;
+		return;
+	}
+	int local_index = d.local_index;
+	int* pt = local_table->getPtr(local_index);
+	pt = pt + arr_indx;
+ 	memcpy(pt,&value,4);		
+}
+
+void assignArr(Datatype d,int arr_indx,char c) // Assign value at some index for char array 
+{
+	if(d.var_type!=1)
+	{
+		cout<<"Please give char type value"<<endl;
+		return;
+	}
+	int local_index = d.local_index;
+	int* pt = local_table->getPtr(local_index);
+	memcpy(((char *)pt+arr_indx),&c,1);
+}
+
+void assignArr(Datatype d,int arr_indx,med_int m) // Assign value at some index for medium int array 
+{
+
+}
+
+void assignArr(Datatype d,int arr_indx,bool b) // Assign value at some index for bool array 
+{
+
+}
+
+void assignArr(Datatype d,int arr[],int arr_size )  // Assign value to entire integer array
+{
+	if(d.var_type!=0)
+	{
+		cout<<"Please give int type value"<<endl;
+		return;
+	}
+	int local_index = d.local_index;
+	int* pt = local_table->getPtr(local_index);
+	for (int i = 0; i < arr_size; ++i)
+	{
+		/* code */
+		*(pt + i) = arr[i];
+	}
+}
+
+void assignArr(Datatype d,char arr[] )  // Assign value to entire char array
+{
+
+}
+
+void assignArr(Datatype d,medium_int arr[] )  // Assign value to entire medium int array
+{
+
+}
+
+void assignArr(Datatype d,bool arr[] )  // Assign value to entire bool array
+{
+
+}
+void freeElem(int loc_id)
+{
+	int* p = local_table->getPtr(loc_id);
 	*p = (*p) & (-2);  // Clear allocated flag in last bit
+
 	int* next_block = p + *p;
-	if((*next_block & 1)==0)
+	if((*next_block & 1)==0)  // Check for next block
 	{
 		*p = *p + *next_block; 
 	}
+
+	// Need to check again
+	if (p != memory->start_mem && (*(p - 1) & 1) == 0)  // Check for prev block
+	{  
+        int prev_size = (*(p - 1) >> 1);
+        *(p - prev_size) = (prev_size + words) << 1;  // new size in words
+        *(p + words - 1) = (prev_size + words) << 1;  // footer
+        words = words + prev_size;
+    }
 }
 
 int main(){
